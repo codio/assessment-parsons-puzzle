@@ -1,0 +1,41 @@
+.hide {
+  display: none !important;
+}
+
+.codio-fieldset {
+  display: flex;
+  padding-bottom: 8px;
+}
+
+.codio-fieldset label {
+  display: inline-block;
+  flex: 0 0 200px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.codio-fieldset textarea,
+.codio-fieldset input[type='text'],
+.codio-fieldset input[type='number'],
+.codio-fieldset select {
+  color: #414852;
+  border: 1px solid #c7d3e5;
+  padding: 7px 10px;
+  width: 200px;
+}
+
+.rationale-container {
+  display: block;
+}
+
+.radio-label {
+  margin-bottom: 5px;
+}
+
+.rationale-inner-radio-container {
+  padding-left: 40px;
+}
+
+.rationale-inner-radio-container label {
+  flex-basis: 70px;
+}

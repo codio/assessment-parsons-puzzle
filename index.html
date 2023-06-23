@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Parsons assessment</title>
+  <link type="text/css" rel="stylesheet" href="./lib/parsons/parsons.css">
+  <link type="text/css" rel="stylesheet" href="./index.css">
+  <script type="text/javascript" src="./lib/parsons/underscore-min.js"></script>
+  <script type="text/javascript" src="./lib/parsons/jquery.min.js"></script>
+  <script type="text/javascript" src="./lib/parsons/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="./lib/parsons/lis.js"></script>
+  <script type="text/javascript" src="./lib/parsons/jquery.sound.js"></script>
+  <script type="text/javascript" src="./lib/parsons/jquery.ui.touch-punch.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js?autorun=false"></script>
+  <script type="text/javascript" src="./lib/parsons/skulpt.js"></script>
+  <script type="text/javascript" src="./lib/parsons/skulpt-stdlib.js"></script>
+  <script type="text/javascript" src="./lib/parsons/parsons.js"></script>
+  <script type="text/javascript" src="lib/codio-common/assessment-helper.js"></script>
+  <script type="text/javascript" src="./index.js"></script>
+</head>
+<body>
+  <div class="codio-assessment hide">
+    <h3 class="codio-assessment-name"></h3>
+    <div class="codio-assessment-content">
+      <div class='codio-assessment-instructions'>
+        <div class='instructions-text'></div>
+      </div>
+      <div class='code-container'>
+        <div class='block-actions hide'></div>
+        <div class='sortable-code trash-container'></div>
+        <div class='sortable-code sortable-container'></div>
+      </div>
+      <div class='turtle-drawing'>
+        <div class='canvas-container'>
+          <p>Click to see Model Drawing</p>
+          <canvas class='model-canvas'></canvas>
+        </div>
+        <div class='canvas-container'>
+          <p>Your code Drawing</p>
+          <canvas class='student-canvas'></canvas>
+        </div>
+      </div>
+      <div class='feedback-container'></div>
+    </div>
+    <div class="codio-assessment-guidance"></div>
+    <div class="codio-assessment-footer"></div>
+  </div>
+</body>
+</html>

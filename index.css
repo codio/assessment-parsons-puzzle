@@ -1,0 +1,33 @@
+body {
+  margin: 0 !important;
+}
+
+.code-container {
+  position: relative;
+}
+
+.sortable-code {
+  float: none;
+}
+
+.sortable-code ul {
+  font-size: inherit;
+}
+
+.sortable-code li {
+  white-space: pre-wrap;
+}
+
+.block-actions {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  background-color: #fff;
+  z-index: 1000;
+  cursor: default !important;
+}
+
+.model-canvas {
+  cursor: pointer;
+}
