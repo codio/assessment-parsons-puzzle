@@ -35,11 +35,11 @@
     const rationale = codioAssessmentSettingsHelper.collectRationale(gradingContainer)
     const resArray = [parsons, points, attempts, rationale]
     const errors = resArray.filter(item => item.error).map(item => item.error)
-    const res = resArray.reduce((acc, result) => {
+    const settings = resArray.reduce((acc, result) => {
       const {error, ...data} = result
       return {...acc, ...data}
     }, {})
-    return {...res, errors}
+    return {settings, errors}
   }
 
   const exportSettings = () => {
@@ -47,35 +47,35 @@
     send(METHODS.GET_SETTINGS, {data});
   }
 
-  const getParsonsSettingsFromAssessment = (assessment) => {
+  const getParsonsSettingsFromAssessmentSettings = (settings) => {
     let options = {}
     try {
-      options = JSON.parse(assessment.source.options)
+      options = JSON.parse(settings.options)
     } catch (e) {}
 
-    if (assessment.source.grader) {
-      options.grader = parsonGraderMap[assessment.source.grader]
+    if (settings.grader) {
+      options.grader = parsonGraderMap[settings.grader]
     }
 
     return {
-      initial: assessment.source.initial || '',
+      initial: settings.initial || '',
       options: options
     }
   }
 
-  const applySettings = (assessment) => {
+  const applySettings = (settings) => {
     /*
-      if (_.isEmpty(assessment.source.grader)) {
-        delete assessment.source.grader
+      if (_.isEmpty(settings.grader)) {
+        delete settings.grader
       }
      */
-    const parsonsData = getParsonsSettingsFromAssessment(assessment)
+    const parsonsData = getParsonsSettingsFromAssessmentSettings(settings)
     parsonsUI = ParsonsUI.build('#execContainer', parsonsData);
 
     const gradingContainer = $('#gradingContainer')
-    codioAssessmentSettingsHelper.renderPoints(gradingContainer, assessment)
-    codioAssessmentSettingsHelper.renderAttempts(gradingContainer, assessment)
-    codioAssessmentSettingsHelper.renderRationale(gradingContainer, assessment)
+    codioAssessmentSettingsHelper.renderPoints(gradingContainer, settings)
+    codioAssessmentSettingsHelper.renderAttempts(gradingContainer, settings)
+    codioAssessmentSettingsHelper.renderRationale(gradingContainer, settings)
   }
 
   const processMessage = (jsonData) => {
@@ -87,7 +87,7 @@
           exportSettings();
           break;
         case METHODS.SET_SETTINGS:
-          applySettings(data.assessment);
+          applySettings(data.settings);
           break;
       }
     } catch {}

@@ -110,9 +110,9 @@
   const getParsonsOptions = () => {
     let sourceOptions = {}
     try {
-      sourceOptions = JSON.parse(assessment.source.options)
+      sourceOptions = JSON.parse(assessment.source.settings.options)
     } catch (e) {}
-    return getProcessedOptions(sourceOptions, assessment.source.grader)
+    return getProcessedOptions(sourceOptions, assessment.source.settings.grader)
   }
 
   const redrawTurtleModel = () => {
@@ -144,11 +144,11 @@
     render()
 
     parson = new ParsonsWidget(parsonsOptions)
-    parson.init(assessment.source.initial)
+    parson.init(assessment.source.settings.initial)
 
     fillLinesFromProps(data, true)
     // redraw model after DOM will be rendered()
-    if (assessment.source.grader === parsonsGraderTypes.TURTLE) {
+    if (assessment.source.settings.grader === parsonsGraderTypes.TURTLE) {
       // can not be drawn in same time
       setTimeout(() => redrawTurtleModel(), 500)
     }
@@ -196,7 +196,7 @@
   }
 
   const processFeedbackHtmlError = (feedbackHtml) => {
-    if (assessment.source.grader !== parsonsGraderTypes.TURTLE) {
+    if (assessment.source.settings.grader !== parsonsGraderTypes.TURTLE) {
       return feedbackHtml
     }
     const commandsMap = {
@@ -250,7 +250,7 @@
     } else {
       trashContainer.remove()
     }
-    if (assessment.source.grader === parsonsGraderTypes.TURTLE) {
+    if (assessment.source.settings.grader === parsonsGraderTypes.TURTLE) {
       $('.model-canvas').attr('id', parsonsOptions.turtleModelCanvas)
       $('.student-canvas').attr('id', parsonsOptions.turtleStudentCanvas)
     } else {
@@ -267,7 +267,7 @@
       !assessmentOptions.eduStartedAssignment,
       assessmentOptions.showAsTeacher,
       answered,
-      assessment.source,
+      assessment.source.settings,
       result ?
         {
           answerGuidance: result.guidance,
@@ -285,8 +285,10 @@
   }
 
   const renderFooter = () => {
+    const result = previousData ? previousData.result : null
     const footerContainer = $('.codio-assessment-footer')
-    footerContainer.append(`<button class='check-button codio-assessment-button'>${assessmentOptions.buttonCaption}</button>`)
+    const caption = codioAssessmentHelper.getButtonCaption(assessmentOptions, assessment.source, result)
+    footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
   }
 
   const updateHtml = () => {
@@ -298,8 +300,8 @@
     const answered = !!(result && result.state) && result.state !== states.RESET
     const usedAttempts = result && result.usedAttempts || 0
     const passed = result && result.state === states.PASS
-    const canAnswerAgain = !assessment.source.maxAttemptsCount ||
-      usedAttempts < assessment.source.maxAttemptsCount
+    const canAnswerAgain = !assessment.source.settings.maxAttemptsCount ||
+      usedAttempts < assessment.source.settings.maxAttemptsCount
     const isDisabled = assessmentOptions.isDisabled || processing || answered && (!canAnswerAgain || passed)
     $('.check-button').attr('disabled', isDisabled)
     const blockActionsEl = $('.block-actions')
