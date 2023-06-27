@@ -1,9 +1,4 @@
 (function (){
-  const METHODS = {
-    GET_STYLES: 'assessments.getStyles',
-    GET_STATE: 'assessments.getState',
-    SAVE_STATE: 'assessments.saveState'
-  }
 
   const parsonsGraderTypes = {
     LINE_BASED: '1',
@@ -24,8 +19,6 @@
 
   const origin = '*'
 
-  const id = window.location.hash.substring(1)
-
   let assessmentOptions = null
   let assessment = null
   let parson = null
@@ -33,6 +26,66 @@
   let processing = false
   let feedback = null
   let previousData = null
+  let resizeObserver = null
+
+  // todo move to helper
+  const METHODS = {
+    GET_STYLES: 'assessments.getStyles',
+    GET_STATE: 'assessments.getState',
+    SAVE_STATE: 'assessments.saveState',
+    SET_HEIGHT: 'assessments.setHeight'
+  }
+  const send = (methodName, data) => {
+    const id = window.location.hash.substring(1)
+    console.log('assessment iframe send', methodName, data)
+    window.parent.postMessage(JSON.stringify({id, method: methodName, data}), origin)
+  }
+  const initialize = (callback) => {
+    window.addEventListener(
+      'message',
+      (event) => {
+        callback(event.data)
+      },
+      false
+    )
+    send(METHODS.GET_STATE)
+    send(METHODS.GET_STYLES)
+  }
+  const getBodyHeight = () => {
+    const body = document.body
+    const html = document.documentElement
+    return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
+  }
+  const addBodyHeightListener = () => {
+    const debounceSetHeight = debounce(() => {
+      send(METHODS.SET_HEIGHT, {height: getBodyHeight()})
+    }, 100)
+    resizeObserver = new ResizeObserver(debounceSetHeight)
+    resizeObserver.observe(document.body)
+  }
+  const addStyle = (() => {
+    const style = document.createElement('style')
+    document.head.append(style)
+    return (styleString) => style.textContent = styleString
+  })()
+  const getButtonCaption = (assessmentOptions, maxAttemptsCount) => {
+    const {usedAttempts, buttonCaption} = assessmentOptions
+    let caption = buttonCaption
+    if (maxAttemptsCount) {
+      const attemptsLeftCount = usedAttempts < maxAttemptsCount ? maxAttemptsCount - usedAttempts : 0
+      const attemptsLeft = attemptsLeftCount ? ` (${attemptsLeftCount} left)` : ''
+      caption = `${caption}${attemptsLeft}`
+    }
+    return caption
+  }
+  const debounce = (func, timeout) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  }
+  // todo move to helper end
 
   const getToggleStatesFromString = (states) => {
     try {
@@ -57,21 +110,21 @@
         trashHash: parson.trashHash(),
         solutionHash: parson.solutionHash(),
         toggleStates: JSON.stringify(parson._getToggleStates() || {})
-      }
+      },
+      draft: true
     })
   }
 
   const updateFeedback = data => {
     feedback = data
     renderFeedback()
-    renderGuidance()
   }
 
   const getProcessedOptions = (options, grader) => {
     let opt = structuredClone(options)
 
-    const sortableId = `sortable-${id}`
-    const trashId = opt.trashId ? `trash-${id}` : null
+    const sortableId = 'sortableId'
+    const trashId = opt.trashId ? `trashId` : null
 
     opt.action_cb = onAction
     opt.feedback_cb = updateFeedback
@@ -96,8 +149,8 @@
         opt.grader = ParsonsWidget._graders.LanguageTranslationGrader
         break
       case parsonsGraderTypes.TURTLE: {
-        opt.turtleModelCanvas = `modelCanvas-${id}`
-        opt.turtleStudentCanvas = `studentCanvas-${id}`
+        opt.turtleModelCanvas = 'modelCanvasId'
+        opt.turtleStudentCanvas = 'studentCanvasId'
         opt.grader = ParsonsWidget._graders.TurtleGrader
         break
       }
@@ -120,6 +173,12 @@
   }
 
   const fillLinesFromProps = ({state, result}, initial = false) => {
+    setTimeout(() => {
+      const showFeedback = parsonsOptions.show_feedback !== false
+      const options = {showFeedback: showFeedback, skipHighlight: !showFeedback}
+      parson.getFeedback(options)
+    }, 5000)
+
     if (result && result.solutionHash) {
       const showFeedback = parsonsOptions.show_feedback !== false
       const options = {showFeedback: showFeedback, skipHighlight: !showFeedback}
@@ -258,36 +317,9 @@
     }
   }
 
-  const renderGuidance = () => {
-    const guidanceContainer = $('.codio-assessment-guidance')
-    guidanceContainer.empty()
-    const result = previousData ? previousData.result : null
-    const answered = !!(result && result.state) && result.state !== states.RESET
-    const guidance = window.codioAssessmentHelper.calculateGuidance(
-      !assessmentOptions.eduStartedAssignment,
-      assessmentOptions.showAsTeacher,
-      answered,
-      assessment.source.settings,
-      result ?
-        {
-          answerGuidance: result.guidance,
-          answerPoints: result.points,
-          attemptsCount: result.usedAttempts,
-          passed: result.state === states.PASS || feedback && feedback.success === true
-        } : {}
-    )
-    if (!guidance) {
-      return
-    }
-    const guidanceEl = $(`<div class='codio-assessment-guidance-container'></div>`)
-    guidanceEl.append($(`<div class='codio-assessment-guidance-text'></div>`).html(guidance))
-    guidanceContainer.append(guidanceEl)
-  }
-
   const renderFooter = () => {
-    const result = previousData ? previousData.result : null
     const footerContainer = $('.codio-assessment-footer')
-    const caption = codioAssessmentHelper.getButtonCaption(assessmentOptions, assessment.source, result)
+    const caption = getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
     footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
   }
 
@@ -312,6 +344,8 @@
     $('.block-actions').on('click', blockActions)
     $('.model-canvas').on('click', () => redrawTurtleModel())
     $('.check-button').on('click', onCheck)
+
+    addBodyHeightListener()
   }
 
   const render = () => {
@@ -320,7 +354,6 @@
     const nameEl = container.find('.codio-assessment-name')
     assessment.source.showName ? nameEl.text(assessment.source.name) : nameEl.remove()
     renderContent()
-    renderGuidance()
     renderFooter()
     updateHtml()
     bindEvents()
@@ -333,7 +366,7 @@
       console.log('assessment iframe processMessage', jsonData, method, data)
       switch (method) {
         case METHODS.GET_STYLES:
-          codioAssessmentHelper.addStyle(data.css)
+          addStyle(data.css)
           break
         case METHODS.GET_STATE:
           updateProcessing(false)
@@ -346,22 +379,5 @@
     } catch {}
   }
 
-  const send = (methodName, data) => {
-    console.log('assessment iframe send', methodName, data)
-    window.parent.postMessage(JSON.stringify({id, method: methodName, data}), origin)
-  }
-
-  const onLoad = () => {
-    window.addEventListener(
-      'message',
-      (event) => {
-        processMessage(event.data)
-      },
-      false
-    )
-    send(METHODS.GET_STATE)
-    send(METHODS.GET_STYLES)
-  }
-
-  window.addEventListener('load', onLoad)
+  window.addEventListener('load', () => initialize(processMessage))
 })()

@@ -31,3 +31,9 @@ body {
 .model-canvas {
   cursor: pointer;
 }
+
+.model-canvas,
+.student-canvas {
+  width: 500px;
+  height: 200px;
+}

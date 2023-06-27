@@ -27,19 +27,8 @@
   }
 
   const collectSettings = () => {
-    // todo show errors?
-    const gradingContainer = $('#gradingContainer')
     const parsons = collectParsons()
-    const points = codioAssessmentSettingsHelper.collectPoints(gradingContainer)
-    const attempts = codioAssessmentSettingsHelper.collectAttempts(gradingContainer)
-    const rationale = codioAssessmentSettingsHelper.collectRationale(gradingContainer)
-    const resArray = [parsons, points, attempts, rationale]
-    const errors = resArray.filter(item => item.error).map(item => item.error)
-    const settings = resArray.reduce((acc, result) => {
-      const {error, ...data} = result
-      return {...acc, ...data}
-    }, {})
-    return {settings, errors}
+    return {settings: parsons}
   }
 
   const exportSettings = () => {
@@ -64,18 +53,11 @@
   }
 
   const applySettings = (settings) => {
-    /*
-      if (_.isEmpty(settings.grader)) {
-        delete settings.grader
-      }
-     */
+    if (!settings.grader) {
+      delete settings.grader
+    }
     const parsonsData = getParsonsSettingsFromAssessmentSettings(settings)
-    parsonsUI = ParsonsUI.build('#execContainer', parsonsData);
-
-    const gradingContainer = $('#gradingContainer')
-    codioAssessmentSettingsHelper.renderPoints(gradingContainer, settings)
-    codioAssessmentSettingsHelper.renderAttempts(gradingContainer, settings)
-    codioAssessmentSettingsHelper.renderRationale(gradingContainer, settings)
+    parsonsUI = ParsonsUI.build('#container', parsonsData);
   }
 
   const processMessage = (jsonData) => {
