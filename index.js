@@ -32,7 +32,7 @@
   const METHODS = {
     GET_STYLES: 'assessments.getStyles',
     GET_STATE: 'assessments.getState',
-    SAVE_STATE: 'assessments.saveState',
+    SAVE_STATE: 'assessments.setState',
     SET_HEIGHT: 'assessments.setHeight'
   }
   const send = (methodName, data) => {
@@ -173,12 +173,6 @@
   }
 
   const fillLinesFromProps = ({state, result}, initial = false) => {
-    setTimeout(() => {
-      const showFeedback = parsonsOptions.show_feedback !== false
-      const options = {showFeedback: showFeedback, skipHighlight: !showFeedback}
-      parson.getFeedback(options)
-    }, 5000)
-
     if (result && result.solutionHash) {
       const showFeedback = parsonsOptions.show_feedback !== false
       const options = {showFeedback: showFeedback, skipHighlight: !showFeedback}
@@ -235,7 +229,7 @@
 
   const onCheck = (event) => {
     event.preventDefault()
-    const feedback = parson.grader.grade({skipHighlight: true})
+    const feedback = parson.grader.grade({skipHighlight: true}) // todo remove after check will be implemented
     updateProcessing(true)
 
     send(METHODS.SAVE_STATE, {
@@ -244,7 +238,7 @@
         solutionHash: parson.solutionHash(),
         toggleStates: JSON.stringify(parson._getToggleStates() || {}),
         studentCode: parson.getStudentCode(),
-        success: feedback.success
+        success: feedback.success // todo remove after check will be implemented
       }
     })
   }
