@@ -33,12 +33,32 @@
     GET_STYLES: 'assessments.getStyles',
     GET_STATE: 'assessments.getState',
     SAVE_STATE: 'assessments.setState',
-    SET_HEIGHT: 'assessments.setHeight'
+    SET_HEIGHT: 'assessments.setHeight',
+    GET_CONTENT: 'assessments.getContent',
+    SET_CONTENT: 'assessments.setContent',
+    CALLBACK: 'assessments.callback'
+  }
+  let callbacks = {}
+  const deferred = () => {
+    let resolve, reject
+    const promise = new Promise((resolveF, rejectF) => {
+      resolve = resolveF
+      reject = rejectF
+    })
+    return { resolve, reject, promise }
   }
   const send = (methodName, data) => {
     const id = window.location.hash.substring(1)
     console.log('assessment iframe send', methodName, data)
     window.parent.postMessage(JSON.stringify({id, method: methodName, data}), origin)
+  }
+  const sendAndWait = (methodName, data = {}) => {
+    const id = `id_${Date.now()}`
+    const dfd = deferred()
+    callbacks[id] = (data) => data && data.error ? dfd.reject(new Error(data.error)) : dfd.resolve(data)
+    data.callbackId = id
+    send(methodName, data)
+    return dfd.promise
   }
   const initialize = (callback) => {
     window.addEventListener(
@@ -369,6 +389,14 @@
         case METHODS.SAVE_STATE:
           updateProcessing(false)
           break
+        case METHODS.CALLBACK: {
+          if (!data) {
+            return
+          }
+          const {callbackId, ...result} = data
+          callbacks[callbackId] && callbacks[callbackId](result)
+          break
+        }
       }
     } catch {}
   }
