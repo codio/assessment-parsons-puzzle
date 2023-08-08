@@ -52,7 +52,7 @@
     }
   }
 
-  const applySettings = (settings) => {
+  const applySettings = (settings = {}) => {
     if (!settings.grader) {
       delete settings.grader
     }
