@@ -1,0 +1,5 @@
+---
+  name: Parsons Puzzle Assessment
+  type: parsons-puzzle
+  icon: ./icon.svg
+  defaultHeight: 500
