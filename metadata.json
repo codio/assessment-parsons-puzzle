@@ -1,0 +1,9 @@
+{
+  "name": "Parsons Puzzle",
+  "type": "assessment",
+  "properties": {
+    "type": "parsons-puzzle",
+    "icon": "./icon.svg",
+    "defaultHeight": 500
+  }
+}
