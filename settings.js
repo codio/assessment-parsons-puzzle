@@ -9,7 +9,9 @@
   }
   const METHODS = {
     GET_SETTINGS: 'assessments.getSettings',
-    SET_SETTINGS: 'assessments.setSettings'
+    GET_SETTINGS_RESPONSE: 'assessments.getSettings.response',
+    SET_SETTINGS: 'assessments.setSettings',
+    SET_SETTINGS_RESPONSE: 'assessments.setSettings.response'
   }
   const origin = '*'
 
@@ -33,7 +35,7 @@
 
   const exportSettings = () => {
     const data = collectSettings();
-    send(METHODS.GET_SETTINGS, {data});
+    send(METHODS.SET_SETTINGS_RESPONSE, {data});
   }
 
   const getParsonsSettingsFromAssessmentSettings = (settings) => {
@@ -65,10 +67,10 @@
     try {
       const {method, data} = JSON.parse(jsonData);
       switch (method) {
-        case METHODS.GET_SETTINGS:
+        case METHODS.SET_SETTINGS:
           exportSettings();
           break;
-        case METHODS.SET_SETTINGS:
+        case METHODS.GET_SETTINGS_RESPONSE:
           applySettings(data.settings);
           break;
       }
@@ -88,7 +90,7 @@
       },
       false
     );
-    send(METHODS.SET_SETTINGS)
+    send(METHODS.GET_SETTINGS)
   }
 
   window.addEventListener('load', onLoad);

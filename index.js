@@ -17,8 +17,6 @@
 
   const actionsToCatch = ['moveOutput', 'addOutput', 'removeOutput', 'moveInput', 'toggle']
 
-  const origin = '*'
-
   let assessmentOptions = null
   let assessment = null
   let parson = null
@@ -26,86 +24,6 @@
   let processing = false
   let feedback = null
   let previousData = null
-  let resizeObserver = null
-
-  // todo move to helper
-  const METHODS = {
-    GET_STYLES: 'assessments.getStyles',
-    GET_STATE: 'assessments.getState',
-    SAVE_STATE: 'assessments.setState',
-    SET_HEIGHT: 'assessments.setHeight',
-    GET_CONTENT: 'assessments.getContent',
-    SET_CONTENT: 'assessments.setContent',
-    CALLBACK: 'assessments.callback'
-  }
-  let callbacks = {}
-  const deferred = () => {
-    let resolve, reject
-    const promise = new Promise((resolveF, rejectF) => {
-      resolve = resolveF
-      reject = rejectF
-    })
-    return { resolve, reject, promise }
-  }
-  const send = (methodName, data) => {
-    const id = window.location.hash.substring(1)
-    console.log('assessment iframe send', methodName, data)
-    window.parent.postMessage(JSON.stringify({id, method: methodName, data}), origin)
-  }
-  const sendAndWait = (methodName, data = {}) => {
-    const id = `id_${Date.now()}`
-    const dfd = deferred()
-    callbacks[id] = (data) => data && data.error ? dfd.reject(new Error(data.error)) : dfd.resolve(data)
-    data.callbackId = id
-    send(methodName, data)
-    return dfd.promise
-  }
-  const initialize = (callback) => {
-    window.addEventListener(
-      'message',
-      (event) => {
-        callback(event.data)
-      },
-      false
-    )
-    send(METHODS.GET_STATE)
-    send(METHODS.GET_STYLES)
-  }
-  const getBodyHeight = () => {
-    const body = document.body
-    const html = document.documentElement
-    return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
-  }
-  const addBodyHeightListener = () => {
-    const debounceSetHeight = debounce(() => {
-      send(METHODS.SET_HEIGHT, {height: getBodyHeight()})
-    }, 100)
-    resizeObserver = new ResizeObserver(debounceSetHeight)
-    resizeObserver.observe(document.body)
-  }
-  const addStyle = (() => {
-    const style = document.createElement('style')
-    document.head.append(style)
-    return (styleString) => style.textContent = styleString
-  })()
-  const getButtonCaption = (assessmentOptions, maxAttemptsCount) => {
-    const {usedAttempts, buttonCaption} = assessmentOptions
-    let caption = buttonCaption
-    if (maxAttemptsCount) {
-      const attemptsLeftCount = usedAttempts < maxAttemptsCount ? maxAttemptsCount - usedAttempts : 0
-      const attemptsLeft = attemptsLeftCount ? ` (${attemptsLeftCount} left)` : ''
-      caption = `${caption}${attemptsLeft}`
-    }
-    return caption
-  }
-  const debounce = (func, timeout) => {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => { func.apply(this, args); }, timeout);
-    };
-  }
-  // todo move to helper end
 
   const getToggleStatesFromString = (states) => {
     try {
@@ -125,13 +43,15 @@
       return
     }
     updateProcessing(true)
-    send(METHODS.SAVE_STATE, {
-      state: {
-        trashHash: parson.trashHash(),
-        solutionHash: parson.solutionHash(),
-        toggleStates: JSON.stringify(parson._getToggleStates() || {})
-      },
-      draft: true
+    window.codioAssessmentsHelper.send(
+      window.codioAssessmentsHelper.METHODS.SET_STATE,
+      {
+        state: {
+          trashHash: parson.trashHash(),
+          solutionHash: parson.solutionHash(),
+          toggleStates: JSON.stringify(parson._getToggleStates() || {})
+        },
+        draft: true
     })
   }
 
@@ -252,14 +172,16 @@
     const feedback = parson.grader.grade({skipHighlight: true}) // todo remove after check will be implemented
     updateProcessing(true)
 
-    send(METHODS.SAVE_STATE, {
-      result: {
-        trashHash: parson.trashHash(),
-        solutionHash: parson.solutionHash(),
-        toggleStates: JSON.stringify(parson._getToggleStates() || {}),
-        studentCode: parson.getStudentCode(),
-        success: feedback.success // todo remove after check will be implemented
-      }
+    window.codioAssessmentsHelper.send(
+      window.codioAssessmentsHelper.METHODS.SET_STATE,
+      {
+        result: {
+          trashHash: parson.trashHash(),
+          solutionHash: parson.solutionHash(),
+          toggleStates: JSON.stringify(parson._getToggleStates() || {}),
+          studentCode: parson.getStudentCode(),
+          success: feedback.success // todo remove after check will be implemented
+        }
     })
   }
 
@@ -333,7 +255,7 @@
 
   const renderFooter = () => {
     const footerContainer = $('.codio-assessment-footer')
-    const caption = getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
+    const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
     footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
   }
 
@@ -359,7 +281,7 @@
     $('.model-canvas').on('click', () => redrawTurtleModel())
     $('.check-button').on('click', onCheck)
 
-    addBodyHeightListener()
+    window.codioAssessmentsHelper.addBodyHeightListener()
   }
 
   const render = () => {
@@ -379,27 +301,20 @@
       const {method, data} = JSON.parse(jsonData)
       console.log('assessment iframe processMessage', jsonData, method, data)
       switch (method) {
-        case METHODS.GET_STYLES:
-          addStyle(data.css)
+        case window.codioAssessmentsHelper.METHODS.GET_STYLES_RESPONSE:
+          window.codioAssessmentsHelper.addStyle(data.css)
           break
-        case METHODS.GET_STATE:
+        case window.codioAssessmentsHelper.METHODS.GET_STATE_RESPONSE:
           updateProcessing(false)
           applyState(data)
           break
-        case METHODS.SAVE_STATE:
-          updateProcessing(false)
-          break
-        case METHODS.CALLBACK: {
-          if (!data) {
-            return
-          }
-          const {callbackId, ...result} = data
-          callbacks[callbackId] && callbacks[callbackId](result)
+        case window.codioAssessmentsHelper.METHODS.CALLBACK: {
+          window.codioAssessmentsHelper.processCallback(data)
           break
         }
       }
     } catch {}
   }
 
-  window.addEventListener('load', () => initialize(processMessage))
+  window.addEventListener('load', () => window.codioAssessmentsHelper.initialize(processMessage))
 })()
