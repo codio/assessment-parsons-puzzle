@@ -10,8 +10,8 @@
   const METHODS = {
     GET_SETTINGS: 'assessments.getSettings',
     GET_SETTINGS_RESPONSE: 'assessments.getSettings.response',
-    SET_SETTINGS: 'assessments.setSettings',
-    SET_SETTINGS_RESPONSE: 'assessments.setSettings.response'
+    EXPORT_SETTINGS: 'assessments.exportSettings',
+    EXPORT_SETTINGS_RESPONSE: 'assessments.exportSettings.response'
   }
   const origin = '*'
 
@@ -35,7 +35,7 @@
 
   const exportSettings = () => {
     const data = collectSettings();
-    send(METHODS.SET_SETTINGS_RESPONSE, {data});
+    send(METHODS.EXPORT_SETTINGS_RESPONSE, {data});
   }
 
   const getParsonsSettingsFromAssessmentSettings = (settings) => {
@@ -67,7 +67,7 @@
     try {
       const {method, data} = JSON.parse(jsonData);
       switch (method) {
-        case METHODS.SET_SETTINGS:
+        case METHODS.EXPORT_SETTINGS:
           exportSettings();
           break;
         case METHODS.GET_SETTINGS_RESPONSE:
