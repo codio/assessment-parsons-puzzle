@@ -31,12 +31,12 @@
   const collectSettings = () => {
     const parsons = collectParsons()
     const instructions = $('#instructions').val()
-    return {settings: {...parsons, instructions}}
+    return {...parsons, instructions}
   }
 
   const exportSettings = () => {
     const data = collectSettings();
-    send(METHODS.EXPORT_SETTINGS_RESPONSE, {data});
+    send(METHODS.EXPORT_SETTINGS_RESPONSE, data);
   }
 
   const getParsonsSettingsFromAssessmentSettings = (settings) => {
