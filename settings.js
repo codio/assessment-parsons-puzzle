@@ -30,7 +30,8 @@
 
   const collectSettings = () => {
     const parsons = collectParsons()
-    return {settings: parsons}
+    const instructions = $('#instructions').val()
+    return {settings: {...parsons, instructions}}
   }
 
   const exportSettings = () => {
@@ -60,6 +61,7 @@
     }
     const parsonsData = getParsonsSettingsFromAssessmentSettings(settings)
     parsonsUI = ParsonsUI.build('#container', parsonsData);
+    $('#instructions').val(settings.instructions || '');
   }
 
   const processMessage = (jsonData) => {
