@@ -149,6 +149,7 @@
   }
 
   const applyState = (data) => {
+    console.log('assessment iframe applyState', data)
     previousData = data
     if (!assessment) {
       applyStateInitial(data)
@@ -173,7 +174,7 @@
     updateProcessing(true)
 
     window.codioAssessmentsHelper.send(
-      window.codioAssessmentsHelper.METHODS.SET_STATE,
+      window.codioAssessmentsHelper.METHODS.CHECK,
       {
         result: {
           trashHash: parson.trashHash(),
@@ -183,6 +184,16 @@
           success: feedback.success // todo remove after check will be implemented
         }
     })
+  }
+
+  const onModify = (event) => {
+    event.preventDefault()
+    codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.MODIFY)
+  }
+
+  const onReset = (event) => {
+    event.preventDefault()
+    codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.RESET)
   }
 
   const blockActions = (e) => {
@@ -255,8 +266,15 @@
 
   const renderFooter = () => {
     const footerContainer = $('.codio-assessment-footer')
+
+    // modify button
+    footerContainer.append(`<button class='modify-button codio-assessment-button'>Modify answer</button>`)
+
     const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
     footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
+
+    // reset button
+    footerContainer.append(`<button class='reset-button codio-assessment-button'>Reset</button>`)
   }
 
   const updateHtml = () => {
@@ -280,6 +298,8 @@
     $('.block-actions').on('click', blockActions)
     $('.model-canvas').on('click', () => redrawTurtleModel())
     $('.check-button').on('click', onCheck)
+    $('.modify-button').on('click', onModify)
+    $('.reset-button').on('click', onReset)
 
     window.codioAssessmentsHelper.addBodyHeightListener()
   }
@@ -316,5 +336,9 @@
     } catch {}
   }
 
-  window.addEventListener('load', () => window.codioAssessmentsHelper.initialize(processMessage))
+  window.addEventListener('load', () => {
+    window.codioAssessmentsHelper.registerMessageListener(processMessage)
+    window.codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.GET_STATE)
+    window.codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.GET_STYLES)
+  })
 })()

@@ -9,11 +9,6 @@
   box-sizing: border-box;
 }
 
-.settings-row {
-  display: flex;
-  flex-direction: column;
-}
-
 #instructions {
   width: 100%;
 }

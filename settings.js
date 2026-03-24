@@ -7,15 +7,6 @@
     '4': 'ParsonsWidget._graders.LanguageTranslationGrader',
     '5': 'ParsonsWidget._graders.TurtleGrader'
   }
-  const METHODS = {
-    GET_SETTINGS: 'assessments.getSettings',
-    GET_SETTINGS_RESPONSE: 'assessments.getSettings.response',
-    EXPORT_SETTINGS: 'assessments.exportSettings',
-    EXPORT_SETTINGS_RESPONSE: 'assessments.exportSettings.response'
-  }
-  const origin = '*'
-
-  const id = window.location.hash.substring(1)
   let parsonsUI = null
 
   const collectParsons = () => {
@@ -36,7 +27,7 @@
 
   const exportSettings = () => {
     const data = collectSettings();
-    send(METHODS.EXPORT_SETTINGS_RESPONSE, data);
+    window.codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.EXPORT_SETTINGS_RESPONSE, data);
   }
 
   const getParsonsSettingsFromAssessmentSettings = (settings) => {
@@ -69,30 +60,19 @@
     try {
       const {method, data} = JSON.parse(jsonData);
       switch (method) {
-        case METHODS.EXPORT_SETTINGS:
+        case window.codioAssessmentsHelper.METHODS.EXPORT_SETTINGS:
           exportSettings();
           break;
-        case METHODS.GET_SETTINGS_RESPONSE:
+        case window.codioAssessmentsHelper.METHODS.GET_SETTINGS_RESPONSE:
           applySettings(data.settings);
           break;
       }
     } catch {}
   }
 
-  const send = (methodName, data) => {
-    console.log('iframe send', methodName, data)
-    window.parent.postMessage(JSON.stringify({id, method: methodName, data}), origin);
-  }
-
   const onLoad = () => {
-    window.addEventListener(
-      'message',
-      (event) => {
-        processMessage(event.data)
-      },
-      false
-    );
-    send(METHODS.GET_SETTINGS)
+    window.codioAssessmentsHelper.registerMessageListener(processMessage)
+    window.codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.GET_SETTINGS)
   }
 
   window.addEventListener('load', onLoad);

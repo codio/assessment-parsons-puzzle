@@ -4,6 +4,9 @@
   "properties": {
     "type": "parsons-puzzle",
     "icon": "./icon.svg",
-    "defaultHeight": 500
+    "defaultHeight": 500,
+    "gradingControls": {
+
+    }
   }
 }
