@@ -42,7 +42,6 @@
     if (!actionsToCatch.includes(action.type)) {
       return
     }
-    updateProcessing(true)
     window.codioAssessmentsHelper.send(
       window.codioAssessmentsHelper.METHODS.SET_STATE,
       {
@@ -50,8 +49,7 @@
           trashHash: parson.trashHash(),
           solutionHash: parson.solutionHash(),
           toggleStates: JSON.stringify(parson._getToggleStates() || {})
-        },
-        draft: true
+        }
     })
   }
 
@@ -174,7 +172,7 @@
     updateProcessing(true)
 
     window.codioAssessmentsHelper.send(
-      window.codioAssessmentsHelper.METHODS.CHECK,
+      window.codioAssessmentsHelper.METHODS.SUBMIT_ANSWER,
       {
         result: {
           trashHash: parson.trashHash(),
@@ -186,9 +184,9 @@
     })
   }
 
-  const onModify = (event) => {
+  const onUnblock = (event) => {
     event.preventDefault()
-    codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.MODIFY)
+    codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.UNBLOCK)
   }
 
   const onReset = (event) => {
@@ -264,17 +262,64 @@
     }
   }
 
+  const isAnswerCompatible = () => {
+    if (!parson) {
+      return true
+    }
+    const {state, result, isDisabled, useSubmitButtons} = assessmentOptions
+    const {canAnswerAgain} = getAssessmentState()
+
+    const noButton = !isDisabled && !useSubmitButtons && canAnswerAgain
+
+    const linesCount = parson.modified_lines.length
+    const calculateLinesInHash = (hash) => hash === '-' ? 0 : hash.split('-').length
+    if (result?.solutionHash && !noButton) {
+      return (calculateLinesInHash(result.solutionHash) + calculateLinesInHash(result.trashHash)) === linesCount
+    } else if (state?.solutionHash) {
+      return (calculateLinesInHash(state.solutionHash) + calculateLinesInHash(state.trashHash)) === linesCount
+    }
+    return true
+  }
+
   const renderFooter = () => {
+    const assessmentState = getAssessmentState()
+    const {answered, teacherInStudentsProject, showModify, canAnswerAgain, passed} = assessmentState
+
     const footerContainer = $('.codio-assessment-footer')
 
-    // modify button
-    footerContainer.append(`<button class='modify-button codio-assessment-button'>Modify answer</button>`)
+    if (!teacherInStudentsProject && showModify) {
+      footerContainer.append(`<button class='unblock-button codio-assessment-button'>Modify answer</button>`)
+    }
 
-    const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
-    footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
+    if (!showModify && assessmentOptions.useSubmitButtons) {
+      const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
+      footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
+    }
 
-    // reset button
-    footerContainer.append(`<button class='reset-button codio-assessment-button'>Reset</button>`)
+    if (!showModify && answered && assessmentOptions.owner && (!canAnswerAgain || passed || !isAnswerCompatible())) {
+      footerContainer.append(`<button class='reset-button codio-assessment-button'>Reset</button>`)
+    }
+  }
+
+  const getAssessmentState = () => {
+    const result = previousData ? previousData.result : null
+    const answered = !!(result && result.state) && result.state !== states.RESET
+    const usedAttempts = result && result.usedAttempts || 0
+    const passed = result && result.state === states.PASS
+    const canAnswerAgain = window.codioAssessmentsHelper.isCanAnswerAgain(assessment, result)
+    const isDisabled = assessmentOptions.isDisabled || processing || answered && (!canAnswerAgain || passed)
+    const showModify = assessmentOptions.showUnblock && (!answered || canAnswerAgain)
+    const teacherInStudentsProject = assessmentOptions.showAsTeacher && !assessmentOptions.owner
+
+    return {
+      isDisabled,
+      answered,
+      usedAttempts,
+      passed,
+      canAnswerAgain,
+      showModify,
+      teacherInStudentsProject
+    }
   }
 
   const updateHtml = () => {
@@ -282,23 +327,17 @@
       return
     }
     // processing, new state/results
-    const result = previousData ? previousData.result : null
-    const answered = !!(result && result.state) && result.state !== states.RESET
-    const usedAttempts = result && result.usedAttempts || 0
-    const passed = result && result.state === states.PASS
-    const canAnswerAgain = !assessment.source.settings.maxAttemptsCount ||
-      usedAttempts < assessment.source.settings.maxAttemptsCount
-    const isDisabled = assessmentOptions.isDisabled || processing || answered && (!canAnswerAgain || passed)
-    $('.check-button').attr('disabled', isDisabled)
+    const assessmentState = getAssessmentState()
+    $('.check-button').attr('disabled', assessmentState.isDisabled)
     const blockActionsEl = $('.block-actions')
-    isDisabled ? blockActionsEl.removeClass('hide') : blockActionsEl.addClass('hide')
+    assessmentState.isDisabled ? blockActionsEl.removeClass('hide') : blockActionsEl.addClass('hide')
   }
 
   const bindEvents = () => {
     $('.block-actions').on('click', blockActions)
     $('.model-canvas').on('click', () => redrawTurtleModel())
     $('.check-button').on('click', onCheck)
-    $('.modify-button').on('click', onModify)
+    $('.unblock-button').on('click', onUnblock)
     $('.reset-button').on('click', onReset)
 
     window.codioAssessmentsHelper.addBodyHeightListener()
