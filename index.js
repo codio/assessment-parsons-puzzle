@@ -1,18 +1,10 @@
 (function (){
-
   const parsonsGraderTypes = {
     LINE_BASED: '1',
     VARIABLE_CHECK: '2',
     UNIT_TEST: '3',
     LANGUAGE_TRANSLATION: '4',
     TURTLE: '5'
-  }
-
-  const states = {
-    FAIL: 'fail',
-    PASS: 'pass',
-    RESET: 'reset',
-    PROGRESS: 'progress'
   }
 
   const actionsToCatch = ['moveOutput', 'addOutput', 'removeOutput', 'moveInput', 'toggle']
@@ -23,7 +15,7 @@
   let parsonsOptions = null
   let processing = false
   let feedback = null
-  let previousData = null
+  let currentData = null
 
   const getToggleStatesFromString = (states) => {
     try {
@@ -148,7 +140,7 @@
 
   const applyState = (data) => {
     console.log('assessment iframe applyState', data)
-    previousData = data
+    currentData = data
     if (!assessment) {
       applyStateInitial(data)
       return
@@ -156,13 +148,16 @@
     if (data.state) {
       fillLinesFromProps(data)
       updateHtml()
+      renderGuidance()
       return
     }
     // reset
-    if (previousData.state && !data.state) {
+    if (currentData.state && !data.state) {
       parson.shuffleLines()
       parson.clearFeedback()
       updateFeedback(null)
+      updateHtml()
+      renderGuidance()
     }
   }
 
@@ -245,7 +240,7 @@
   }
 
   const renderContent = () => {
-    $('.instructions-text').html(assessment.source.instructions)
+    $('.instructions-text').html(assessment.source.settings.instructions)
     const sortableContainer = $('.sortable-container')
     sortableContainer.attr('id', parsonsOptions.sortableId)
     const trashContainer = $('.trash-container')
@@ -260,13 +255,15 @@
     } else {
       $('.turtle-drawing').remove()
     }
+    renderGuidance()
   }
 
   const isAnswerCompatible = () => {
     if (!parson) {
       return true
     }
-    const {state, result, isDisabled, useSubmitButtons} = assessmentOptions
+    const {isDisabled, useSubmitButtons} = assessmentOptions
+    const {state, result} = currentData || {}
     const {canAnswerAgain} = getAssessmentState()
 
     const noButton = !isDisabled && !useSubmitButtons && canAnswerAgain
@@ -282,30 +279,45 @@
   }
 
   const renderFooter = () => {
-    const assessmentState = getAssessmentState()
-    const {answered, teacherInStudentsProject, showModify, canAnswerAgain, passed} = assessmentState
-
     const footerContainer = $('.codio-assessment-footer')
+    const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
+    footerContainer.find('.check-button').html(caption)
+  }
 
-    if (!teacherInStudentsProject && showModify) {
-      footerContainer.append(`<button class='unblock-button codio-assessment-button'>Modify answer</button>`)
-    }
-
-    if (!showModify && assessmentOptions.useSubmitButtons) {
-      const caption = window.codioAssessmentsHelper.getButtonCaption(assessmentOptions, assessment.source.maxAttemptsCount)
-      footerContainer.append(`<button class='check-button codio-assessment-button'>${caption}</button>`)
-    }
-
-    if (!showModify && answered && assessmentOptions.owner && (!canAnswerAgain || passed || !isAnswerCompatible())) {
-      footerContainer.append(`<button class='reset-button codio-assessment-button'>Reset</button>`)
+  const renderGuidance = () => {
+    const guidanceBlock = $('.codio-assessment-guidance-block')
+    guidanceBlock.empty()
+    const assessmentState = getAssessmentState()
+    const {result} = currentData || {}
+    const guidance = window.codioAssessmentsHelper.calculateGuidance(
+      !assessmentOptions.eduStartedAssignment,
+      assessmentOptions.showAsTeacher,
+      assessmentState.answered,
+      assessment.source,
+      result ?
+        {
+          answerGuidance: result.guidance,
+          answerPoints: result.points,
+          attemptsCount: result.usedAttempts,
+          passed: result.state === window.codioAssessmentsHelper.States.PASS || feedback?.success === true,
+          isCompletedAndReleased: window.codioAssessmentsHelper.calculateCompletedAndReleased(
+            assessmentOptions.eduStartedAssignment
+          )
+        } : {}
+    )
+    if (guidance) {
+      const guidanceContainer = $('<div class="codio-assessment-guidance-container" />')
+      const guidanceText = $('<div class="codio-assessment-guidance-text">').html(guidance)
+      guidanceContainer.append(guidanceText)
+      guidanceBlock.append(guidanceContainer)
     }
   }
 
   const getAssessmentState = () => {
-    const result = previousData ? previousData.result : null
-    const answered = !!(result && result.state) && result.state !== states.RESET
+    const result = currentData ? currentData.result : null
+    const answered = !!(result && result.state) && result.state !== window.codioAssessmentsHelper.States.RESET
     const usedAttempts = result && result.usedAttempts || 0
-    const passed = result && result.state === states.PASS
+    const passed = result && result.state === window.codioAssessmentsHelper.States.PASS
     const canAnswerAgain = window.codioAssessmentsHelper.isCanAnswerAgain(assessment, result)
     const isDisabled = assessmentOptions.isDisabled || processing || answered && (!canAnswerAgain || passed)
     const showModify = assessmentOptions.showUnblock && (!answered || canAnswerAgain)
@@ -328,14 +340,35 @@
     }
     // processing, new state/results
     const assessmentState = getAssessmentState()
-    $('.check-button').attr('disabled', assessmentState.isDisabled)
     const blockActionsEl = $('.block-actions')
     assessmentState.isDisabled ? blockActionsEl.removeClass('hide') : blockActionsEl.addClass('hide')
+    updateFooterButtons()
+  }
+
+  const updateVisibility = (el, visible) => {
+    visible ? el.removeClass('hide') : el.addClass('hide')
+  }
+
+  const updateFooterButtons = () => {
+    const assessmentState = getAssessmentState()
+    const {teacherInStudentsProject, showModify, isDisabled, canAnswerAgain, passed, answered} = assessmentState
+
+    const checkVisibility = !showModify && assessmentOptions.useSubmitButtons
+    const checkBtn = $('.check-button')
+    updateVisibility(checkBtn, checkVisibility)
+    $('.check-button').attr('disabled', isDisabled)
+
+    const unblockVisibility = !teacherInStudentsProject && showModify
+    updateVisibility($('.unblock-button'), unblockVisibility)
+
+    const resetVisibility = !showModify && answered && assessmentOptions.owner
+      && (!canAnswerAgain || passed || !isAnswerCompatible())
+    updateVisibility($('.reset-button'), resetVisibility)
   }
 
   const bindEvents = () => {
     $('.block-actions').on('click', blockActions)
-    $('.model-canvas').on('click', () => redrawTurtleModel())
+    $('.model-canvas').on('click', redrawTurtleModel)
     $('.check-button').on('click', onCheck)
     $('.unblock-button').on('click', onUnblock)
     $('.reset-button').on('click', onReset)
@@ -344,7 +377,6 @@
   }
 
   const render = () => {
-    // todo showUnblock, showModify
     const container = $('.codio-assessment')
     const nameEl = container.find('.codio-assessment-name')
     assessment.source.showName ? nameEl.text(assessment.source.name) : nameEl.remove()
