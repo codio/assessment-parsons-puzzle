@@ -356,7 +356,7 @@
     const checkVisibility = !showModify && assessmentOptions.useSubmitButtons
     const checkBtn = $('.check-button')
     updateVisibility(checkBtn, checkVisibility)
-    $('.check-button').attr('disabled', isDisabled)
+    checkBtn.attr('disabled', isDisabled)
 
     const unblockVisibility = !teacherInStudentsProject && showModify
     updateVisibility($('.unblock-button'), unblockVisibility)
