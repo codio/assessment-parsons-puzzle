@@ -6,7 +6,10 @@
     "icon": "./icon.svg",
     "defaultHeight": 500,
     "gradingControls": {
-
+      "points": true,
+      "useMaximumScore": true,
+      "definedNumberOfAttempts": true,
+      "rationale": true
     }
   }
 }
