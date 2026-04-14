@@ -145,14 +145,14 @@
       applyStateInitial(data)
       return
     }
-    if (data.state) {
+    if (data.state || data.result) {
       fillLinesFromProps(data)
       updateHtml()
       renderGuidance()
       return
     }
     // reset
-    if (currentData.state && !data.state) {
+    if (!data.state && !data.result) {
       parson.shuffleLines()
       parson.clearFeedback()
       updateFeedback(null)
