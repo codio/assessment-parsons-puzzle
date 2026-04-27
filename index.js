@@ -169,13 +169,13 @@
     window.codioAssessmentsHelper.send(
       window.codioAssessmentsHelper.METHODS.SUBMIT_ANSWER,
       {
-        result: {
+        result: {action: {
           trashHash: parson.trashHash(),
           solutionHash: parson.solutionHash(),
           toggleStates: JSON.stringify(parson._getToggleStates() || {}),
           studentCode: parson.getStudentCode(),
           success: feedback.success // todo remove after check will be implemented
-        }
+        }}
     })
   }
 
