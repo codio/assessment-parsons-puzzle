@@ -20,9 +20,14 @@
   }
 
   const collectSettings = () => {
+    const errors = []
+
     const parsons = collectParsons()
     const instructions = $('#instructions').val()
-    return {...parsons, instructions}
+
+    !instructions && errors.push('Instructions field must be completed');
+
+    return {data: {...parsons, instructions}, errors}
   }
 
   const exportSettings = () => {
