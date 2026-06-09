@@ -1,4 +1,5 @@
 (function () {
+  let instructionsEditor = null
   const flipObject = obj => Object.fromEntries(Object.entries(obj).map(([k, v]) => [v, k]))
   const parsonGraderMap = {
     '1': 'ParsonsWidget._graders.LineBasedGrader',
@@ -23,7 +24,7 @@
     const errors = []
 
     const parsons = collectParsons()
-    const instructions = $('#instructions').val()
+    const instructions = instructionsEditor.getContent()
 
     !instructions && errors.push('Instructions field must be completed');
 
@@ -57,7 +58,7 @@
     }
     const parsonsData = getParsonsSettingsFromAssessmentSettings(settings)
     parsonsUI = ParsonsUI.build('#container', parsonsData);
-    $('#instructions').val(settings.instructions || '');
+    instructionsEditor.setContent(settings.instructions || '')
   }
 
   const processMessage = (jsonData) => {
@@ -78,6 +79,7 @@
   const onLoad = () => {
     window.codioAssessmentsHelper.registerMessageListener(processMessage)
     window.codioAssessmentsHelper.send(window.codioAssessmentsHelper.METHODS.GET_SETTINGS)
+    instructionsEditor = window.codioAssessmentsHelper.initializeMarkdownEditor('instructions', 'instructions-command-bar')
   }
 
   window.addEventListener('load', onLoad);
