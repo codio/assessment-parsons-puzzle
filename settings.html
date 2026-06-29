@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <link rel="stylesheet" href="./lib/parsons-UI/main.css">
+  <link type="text/css" rel="stylesheet" href="../assessment-common/settings.css">
+  <link rel="stylesheet" href="./settings.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/cash/8.1.5/cash.min.js"></script>
+  <script src="//unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.js"></script>
+  <link
+      rel="stylesheet"
+      type="text/css"
+      href="//unpkg.com/tiny-markdown-editor/dist/tiny-mde.min.css"
+  />
+  <script type="text/javascript" src="./lib/parsons-UI/parsonsUI.js"></script>
+  <script type="text/javascript" src="../assessment-common/helper.js"></script>
+  <script type="text/javascript" src="./settings.js"></script>
+</head>
+<body>
+  <div id="settings-content" class="codio-assessment-settings-content">
+    <div class="codio-assessment-settings-form-control">
+      <label for="instructions" class="codio-assessment-settings-form-label">Instructions</label>
+      <div class="codio-assessment-settings-form-input-container">
+        <div id="instructions-command-bar"></div>
+        <textarea id="instructions" name="instructions" rows="4" class="codio-assessment-settings-form-input"></textarea>
+      </div>
+    </div>
+    <div id="container"></div>
+  </div>
+</body>
+</html>
